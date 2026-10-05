@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TermCut - what an extra mortgage payment actually buys</title>
+<meta name="description" content="TermCut simulates extra mortgage payments: months erased, interest saved, and the recast-vs-shorter-term tradeoff, with the amortization rows to prove it.">
+<style>
+  :root { --bg:#0e1116; --card:#171c24; --ink:#e8ecf1; --dim:#9aa6b2; --acc:#4ade80; --acc2:#38bdf8; --line:#262e3a; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .wrap { max-width:760px; margin:0 auto; padding:48px 20px 64px; }
+  h1 { font-size:40px; line-height:1.15; margin:0 0 16px; letter-spacing:-0.5px; }
+  h1 span { color:var(--acc); }
+  p.lede { font-size:19px; color:var(--dim); margin:0 0 28px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:22px 24px; margin:18px 0; }
+  .card h2 { margin:0 0 8px; font-size:20px; }
+  .card p { margin:0; color:var(--dim); }
+  .num { color:var(--acc); font-weight:700; }
+  .cta { display:inline-block; margin-top:28px; background:var(--acc); color:#062812; font-weight:700; font-size:18px; padding:14px 30px; border-radius:12px; text-decoration:none; }
+  .cta:hover { filter:brightness(1.08); }
+  .fine { margin-top:34px; font-size:13px; color:var(--dim); }
+  code { background:#0a0d11; padding:1px 6px; border-radius:6px; font-size:14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>An extra $100 a month on your mortgage is not a tip. <span>It's a term cut.</span></h1>
+  <p class="lede">TermCut shows exactly what extra payments buy: how many months come off the loan, how much interest never gets charged, and whether a lump sum works harder as a recast or as a shorter term. Every claim comes with the amortization rows behind it.</p>
+
+  <div class="card">
+    <h2>The quiet math lenders don't headline</h2>
+    <p>On a $400,000 loan at 6% for 30 years, adding <span class="num">$200/month</span> erases about <span class="num">65 months</span> and keeps roughly <span class="num">$98,000</span> of interest in your pocket. TermCut computes your numbers, not the brochure's.</p>
+  </div>
+  <div class="card">
+    <h2>Recast or shorter term?</h2>
+    <p>A lump sum can lower your monthly payment (recast) or keep the payment and end the loan early. Same money, very different outcomes. TermCut runs both side by side so the tradeoff is a number, not a vibe.</p>
+  </div>
+  <div class="card">
+    <h2>Proof, not vibes</h2>
+    <p>Every figure is a full month-by-month amortization: balance curve, year-by-year table, and the exact schedule rows - first months, the lump-sum month, and the payoff month.</p>
+  </div>
+
+  <a class="cta" href="app.html">Run your numbers</a>
+  <p class="fine">Runs entirely in your browser. Nothing is sent anywhere. Fixed-rate loans; taxes, insurance, PMI and fees are out of scope.</p>
+</div>
+</body>
+</html>
