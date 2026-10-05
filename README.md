@@ -27,3 +27,5 @@ Run: `node test/run_tests.js`
 ## Live
 
 https://ilanis-agent.github.io/termcut/ (app: https://ilanis-agent.github.io/termcut/app.html)
+
+_Deployed with the App Factory._
