@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TermCut - extra mortgage payment simulator</title>
+<style>
+  :root { --bg:#0e1116; --card:#171c24; --ink:#e8ecf1; --dim:#9aa6b2; --acc:#4ade80; --acc2:#38bdf8; --warn:#fbbf24; --line:#262e3a; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .wrap { max-width:980px; margin:0 auto; padding:24px 18px 80px; }
+  header { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  header h1 { font-size:24px; margin:0; letter-spacing:-0.3px; }
+  header .tag { color:var(--dim); font-size:14px; }
+  header a { color:var(--acc2); text-decoration:none; font-size:13px; margin-left:auto; }
+  .grid { display:grid; grid-template-columns:300px 1fr; gap:16px; align-items:start; }
+  @media (max-width:820px){ .grid{ grid-template-columns:1fr; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; }
+  label { display:block; font-size:12px; color:var(--dim); margin:12px 0 4px; text-transform:uppercase; letter-spacing:0.6px; }
+  input[type=text], input[type=number] { width:100%; background:#0a0d11; border:1px solid var(--line); color:var(--ink); border-radius:8px; padding:9px 10px; font-size:15px; }
+  input:focus { outline:2px solid var(--acc2); outline-offset:0; }
+  .seg { display:flex; gap:6px; margin-top:6px; }
+  .seg button { flex:1; background:#0a0d11; border:1px solid var(--line); color:var(--dim); border-radius:8px; padding:8px 6px; font-size:13px; cursor:pointer; }
+  .seg button.on { background:var(--acc); color:#062812; border-color:var(--acc); font-weight:700; }
+  .presets { display:flex; gap:6px; flex-wrap:wrap; margin-top:14px; }
+  .presets button { background:#0a0d11; border:1px solid var(--line); color:var(--acc2); border-radius:999px; padding:6px 12px; font-size:12.5px; cursor:pointer; }
+  .presets button:hover { border-color:var(--acc2); }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:14px; }
+  .stat { background:#0a0d11; border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .stat .k { font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:0.6px; }
+  .stat .v { font-size:22px; font-weight:700; margin-top:2px; }
+  .stat .v.green { color:var(--acc); }
+  .stat .v.blue { color:var(--acc2); }
+  .stat .v.amber { color:var(--warn); }
+  .stat .s { font-size:12px; color:var(--dim); margin-top:2px; }
+  canvas { width:100%; height:240px; display:block; }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+  th, td { text-align:right; padding:6px 8px; border-bottom:1px solid var(--line); }
+  th { color:var(--dim); font-weight:600; font-size:11.5px; text-transform:uppercase; letter-spacing:0.5px; }
+  td.l, th.l { text-align:left; }
+  .note { color:var(--dim); font-size:12.5px; margin-top:10px; }
+  .err { color:var(--warn); font-size:13px; margin-top:10px; display:none; }
+  details { margin-top:14px; }
+  summary { cursor:pointer; color:var(--acc2); font-size:14px; }
+  h3 { margin:0 0 10px; font-size:16px; }
+  .scroll { max-height:340px; overflow:auto; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>TermCut</h1>
+    <span class="tag">what an extra mortgage payment actually buys</span>
+    <a href="index.html">&larr; about</a>
+  </header>
+  <div class="grid">
+    <div class="card">
+      <h3>Your loan</h3>
+      <label for="principal">Current balance ($)</label>
+      <input id="principal" type="number" min="1" step="1000" value="400000">
+      <label for="rate">Interest rate (% APR)</label>
+      <input id="rate" type="number" min="0" max="30" step="0.01" value="6">
+      <label for="term">Remaining term (years)</label>
+      <input id="term" type="number" min="1" max="40" step="1" value="30">
+      <label for="extra">Extra per month ($)</label>
+      <input id="extra" type="number" min="0" step="10" value="200">
+      <label for="lump">One-time extra payment ($)</label>
+      <input id="lump" type="number" min="0" step="500" value="0">
+      <label for="lumpmonth">&hellip;applied at month #</label>
+      <input id="lumpmonth" type="number" min="1" step="1" value="12">
+      <label>Lump-sum mode</label>
+      <div class="seg">
+        <button id="mode-term" class="on" type="button">Shrink the term</button>
+        <button id="mode-recast" type="button">Recast payment</button>
+      </div>
+      <div class="presets">
+        <button type="button" data-p="400000,6,30,200,0,12,term">$400k &middot; 6% &middot; 30yr +$200/mo</button>
+        <button type="button" data-p="250000,3.5,15,0,20000,24,recast">$250k &middot; 3.5% &middot; 15yr, $20k recast</button>
+        <button type="button" data-p="180000,7.25,25,350,10000,36,term">$180k &middot; 7.25% &middot; 25yr +$350/mo +$10k</button>
+        <button type="button" data-p="100000,0,10,500,0,12,term">0% edge case</button>
+      </div>
+      <div class="err" id="err"></div>
+      <p class="note">Fixed-rate only. Extra payments are applied to principal. Taxes, insurance, PMI and lender fees are not included.</p>
+    </div>
+    <div>
+      <div class="stats" id="stats"></div>
+      <div class="card" style="margin-bottom:14px">
+        <h3>Balance over time</h3>
+        <canvas id="chart" width="640" height="240"></canvas>
+        <p class="note">Gray: staying on schedule. Green: with your extra payments.</p>
+      </div>
+      <div class="card">
+        <h3>Year by year</h3>
+        <div class="scroll"><table id="yeartable"></table></div>
+        <details>
+          <summary>Full schedule: key months</summary>
+          <div class="scroll"><table id="schedtable"></table></div>
+          <p class="note">First 6 months, the lump-sum month, and the final 6 months of the with-extras scenario.</p>
+        </details>
+        <details>
+          <summary>Why early extras hit harder</summary>
+          <p class="note" style="font-size:13.5px">A fixed payment is mostly interest at the start because interest is charged on the remaining balance. An extra dollar in year 1 removes a dollar of balance that would otherwise sit there accruing interest for decades - which is why the same $200 does more in month 3 than in month 300.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="engine.js"></script>
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id);};
+var mode='term';
+var money=new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0});
+var money2=new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2});
+function inputs(){
+  return {
+    principal:Math.max(0,parseFloat($('principal').value)||0),
+    aprPct:Math.max(0,parseFloat($('rate').value)||0),
+    termMonths:Math.max(1,Math.round((parseFloat($('term').value)||0)*12)),
+    extraMonthly:Math.max(0,parseFloat($('extra').value)||0),
+    lumpSum:Math.max(0,parseFloat($('lump').value)||0),
+    lumpMonth:Math.max(1,Math.round(parseFloat($('lumpmonth').value)||1)),
+    recast:mode==='recast'
+  };
+}
+function stat(k,v,cls,s){return '<div class="stat"><div class="k">'+k+'</div><div class="v '+(cls||'')+'">'+v+'</div>'+(s?'<div class="s">'+s+'</div>':'')+'</div>';}
+function render(){
+  var o=inputs();
+  var err=$('err');
+  err.style.display='none';
+  if(!(o.principal>0)||!(o.termMonths>0)){
+    err.textContent='Enter a balance and a term.';
+    err.style.display='block';
+    return;
+  }
+  var c=TermCut.compare(o);
+  var b=c.baseline, s=c.scenario;
+  var html='';
+  html+=stat('Monthly payment', money2.format(b.basePayment), '', 'principal + interest');
+  if(!s.paysOff){
+    html+=stat('With extras','never pays off','amber','payment does not cover interest');
+    $('stats').innerHTML=html;
+    return;
+  }
+  if(c.monthsSaved>0){
+    html+=stat('Time saved', TermCut.fmtMonths(c.monthsSaved), 'green', 'payoff in '+TermCut.fmtMonths(s.months)+' instead of '+TermCut.fmtMonths(b.months));
+  } else {
+    html+=stat('Payoff', TermCut.fmtMonths(s.months), 'green', 'same schedule as baseline');
+  }
+  html+=stat('Interest saved', money.format(Math.max(0,c.interestSaved)), 'green', 'baseline interest '+money.format(b.totalInterest));
+  if(s.recastPayment!=null){
+    html+=stat('New payment after recast', money2.format(s.recastPayment), 'blue', 'was '+money2.format(b.basePayment));
+  } else if(o.extraMonthly>0){
+    html+=stat('You pay', money2.format(s.payment), 'blue', money2.format(b.basePayment)+' + '+money2.format(o.extraMonthly)+' extra');
+  }
+  // per-$100 benchmark
+  var per100=TermCut.compare({principal:o.principal,aprPct:o.aprPct,termMonths:o.termMonths,extraMonthly:100});
+  if(per100.scenario.paysOff&&per100.interestSaved>0){
+    html+=stat('Every $100/mo extra', money.format(per100.interestSaved), 'amber', 'saved over the life of this loan');
+  }
+  $('stats').innerHTML=html;
+  drawChart(b,s);
+  drawYearTable(b,s);
+  drawSched(s,o);
+}
+function drawChart(b,s){
+  var cv=$('chart'), ctx=cv.getContext('2d');
+  var W=cv.width=cv.clientWidth*2, H=cv.height=480;
+  ctx.scale(1,1);
+  ctx.clearRect(0,0,W,H);
+  function bal(res,m){
+    if(m<=0)return res.schedule.length?res.schedule[0].balance+res.schedule[0].principal:0;
+    if(m>res.months)return 0;
+    return res.schedule[m-1].balance;
+  }
+  var maxM=Math.max(b.months,s.months), maxB=Math.max(b.schedule[0]?b.schedule[0].balance+b.schedule[0].principal:0,1);
+  var pad=44, pw=W-pad-16, ph=H-pad-20;
+  ctx.strokeStyle='#262e3a';ctx.fillStyle='#9aa6b2';ctx.font='20px sans-serif';ctx.lineWidth=1;
+  for(var i=0;i<=4;i++){
+    var y=20+ph*i/4;
+    ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(W-16,y);ctx.stroke();
+    var val=maxB*(1-i/4);
+    ctx.fillText('$'+(val/1000).toFixed(0)+'k',4,y+7);
+  }
+  function line(res,color){
+    ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();
+    for(var m=0;m<=res.months;m++){
+      var x=pad+pw*m/maxM, y=20+ph*(1-bal(res,m)/maxB);
+      if(m===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+  line(b,'#5b6673');
+  line(s,'#4ade80');
+  ctx.fillStyle='#9aa6b2';ctx.font='18px sans-serif';
+  ctx.fillText('0',pad,H-6);
+  ctx.fillText(Math.round(maxM/12)+' yr',W-52,H-6);
+}
+function drawYearTable(b,s){
+  var rows='<tr><th class="l">Year</th><th>Scheduled balance</th><th>With extras</th><th>Gap</th></tr>';
+  var n=Math.max(b.yearly.length,s.yearly.length);
+  for(var i=0;i<n;i++){
+    var by=b.yearly[i], sy=s.yearly[i];
+    var yl=by?by.year:(sy?sy.year:i+1);
+    var ylabel=Number.isInteger(yl)?(''+yl):yl.toFixed(1);
+    var bb=by?by.balance:0, sb=sy?sy.balance:0;
+    rows+='<tr><td class="l">'+ylabel+'</td><td>'+money.format(bb)+'</td><td>'+money.format(sb)+'</td><td>'+money.format(Math.max(0,bb-sb))+'</td></tr>';
+  }
+  $('yeartable').innerHTML=rows;
+}
+function drawSched(s,o){
+  var keep={};
+  var last=s.schedule.length;
+  for(var i=0;i<Math.min(6,last);i++)keep[i]=1;
+  for(var j=Math.max(0,last-6);j<last;j++)keep[j]=1;
+  if(o.lumpSum>0){
+    for(var k=Math.max(0,o.lumpMonth-2);k<=Math.min(last-1,o.lumpMonth);k++)keep[k]=1;
+  }
+  var rows='<tr><th class="l">Month</th><th>Payment</th><th>Interest</th><th>Principal</th><th>Balance</th></tr>';
+  var prev=-1;
+  Object.keys(keep).map(Number).sort(function(a,b2){return a-b2;}).forEach(function(i){
+    if(prev>=0&&i>prev+1)rows+='<tr><td class="l" colspan="5" style="color:#5b6673">&hellip;</td></tr>';
+    var r=s.schedule[i];
+    rows+='<tr><td class="l">'+r.month+'</td><td>'+money2.format(r.payment)+'</td><td>'+money2.format(r.interest)+'</td><td>'+money2.format(r.principal)+'</td><td>'+money2.format(r.balance)+'</td></tr>';
+    prev=i;
+  });
+  $('schedtable').innerHTML=rows;
+}
+['principal','rate','term','extra','lump','lumpmonth'].forEach(function(id){$(id).addEventListener('input',render);});
+$('mode-term').addEventListener('click',function(){mode='term';this.classList.add('on');$('mode-recast').classList.remove('on');render();});
+$('mode-recast').addEventListener('click',function(){mode='recast';this.classList.add('on');$('mode-term').classList.remove('on');render();});
+Array.prototype.forEach.call(document.querySelectorAll('.presets button'),function(btn){
+  btn.addEventListener('click',function(){
+    var p=btn.getAttribute('data-p').split(',');
+    $('principal').value=p[0];$('rate').value=p[1];$('term').value=p[2];
+    $('extra').value=p[3];$('lump').value=p[4];$('lumpmonth').value=p[5];
+    mode=p[6];
+    $('mode-term').classList.toggle('on',mode==='term');
+    $('mode-recast').classList.toggle('on',mode==='recast');
+    render();
+  });
+});
+render();
+})();
+</script>
+</body>
+</html>
